@@ -70,13 +70,13 @@
       id="viewer"
       src="OG-ATVM.glb"
       alt="3D model"
-      auto-rotate
       camera-controls
-      rotation-per-second="30deg"
       ar
       shadow-intensity="12"
       exposure="0.5"
       environment-image="legacy"
+      min-camera-orbit="-80deg 10deg auto"
+      max-camera-orbit="80deg 170deg auto"
     ></model-viewer>
 
     <div class="arrow left" id="prevBtn">◀</div>
@@ -87,34 +87,63 @@
       const viewer = document.getElementById("viewer");
       const label = document.getElementById("label");
 
-      // You can use GLB, GLTF, or OBJ files
       const models = [
-        {
-          name: "A",
-          url: "OG-ATVM.glb",
-        },
-        {
-          name: "B",
-          url: "VERTICAL-ATVM.glb",
-        },
-        {
-          name: "C",
-          url: "OG-ATVM-PRIVATE.glb",
-        },
-        {
-          name: "D",
-          url: "VERTICAL-ATVM-PRIVATE.glb",
-        },
+        { name: "A", url: "OG-ATVM.glb", orbitRadius: "14m" },
+        { name: "B", url: "VERTICAL-ATVM.glb", orbitRadius: "14m" },
+        { name: "C", url: "OG-ATVM-PRIVATE.glb", orbitRadius: "14m" },
+        { name: "D", url: "VERTICAL-ATVM-PRIVATE.glb", orbitRadius: "14m" },
+        { name: "E", url: "KIOSK-ATVM.glb", orbitRadius: "0.1m" }, // closer zoom
+        { name: "F", url: "SLEEK-ATVM.glb", orbitRadius: "14m" },
+        { name: "G", url: "BIG-ATVM.glb", orbitRadius: "14m" },
       ];
+
       let index = 0;
+      let theta = 0;
+      let direction = 1;
+      const speed = 0.2;
+      const limit = 90;
+      let currentRadius = models[0].orbitRadius; // start with first model
 
       function updateModel() {
-        viewer.src = models[index].url;
-        label.textContent = `${models[index].name} (${index + 1}/${
-          models.length
-        })`;
+        const model = models[index];
+        viewer.src = model.url;
+        label.textContent = `${model.name} (${index + 1}/${models.length})`;
 
-        viewer.cameraOrbit = "0deg 75deg 14m";
+        // wait for model to load before applying orbit
+        viewer.addEventListener(
+          "load",
+          () => {
+            currentRadius = model.orbitRadius;
+            theta = 0; // reset rotation
+            viewer.cameraOrbit = `${theta}deg 75deg ${currentRadius}`;
+          },
+          { once: true }
+        );
+      }
+      let isDragging = false;
+      let dragTimeout;
+
+      viewer.addEventListener("camera-change", () => {
+        isDragging = true;
+
+        // Clear previous timeout
+        if (dragTimeout) clearTimeout(dragTimeout);
+
+        // Wait 1s after the last camera-change event to resume auto-rotate
+        dragTimeout = setTimeout(() => {
+          isDragging = false;
+        }, 1000);
+      });
+
+      function animate() {
+        if (!isDragging) {
+          theta += direction * speed;
+          if (theta > limit || theta < -limit) direction *= -1;
+
+          viewer.cameraOrbit = `${theta}deg 75deg ${currentRadius}`;
+        }
+
+        requestAnimationFrame(animate);
       }
 
       document.getElementById("prevBtn").onclick = () => {
@@ -126,6 +155,7 @@
         updateModel();
       };
 
+      animate();
       updateModel();
     </script>
   </body>
