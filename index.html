@@ -109,16 +109,12 @@
       let index = 0;
 
       function updateModel() {
-        viewer.pause(); // stop rendering temporarily
         viewer.src = models[index].url;
         label.textContent = `${models[index].name} (${index + 1}/${
           models.length
         })`;
 
-        viewer.resetTurntableRotation();
         viewer.cameraOrbit = "0deg 75deg 14m";
-
-        viewer.play(); // resume auto-rotation
       }
 
       document.getElementById("prevBtn").onclick = () => {
